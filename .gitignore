@@ -1,0 +1,15 @@
+.DS_Store
+._.DS_Store
+screenlog.*
+*.pyc
+*.c
+*.o
+*.so
+dev/
+t/
+figures/
+dist/
+build/
+*_OLD/
+*_OLD
+*.egg-info/
