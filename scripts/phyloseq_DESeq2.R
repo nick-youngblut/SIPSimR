@@ -232,10 +232,11 @@ deseq_run = function(params, physeq, opts){
 
 
 write_maxRej_summary = function(deseq_res, opts){
+  PADJ_CUTOFF = as.numeric(opts[['--padj']])
   # writing a summary table of max rejected hypotheses for each BD window
   deseq_res_max = deseq_res %>%
     group_by(heavy_BD_min, heavy_BD_max, occur_all, occur_heavy) %>%    
-      summarize(n_rej_hypo = sum(padj < opts[['--padj']], na.rm=TRUE)) %>%
+      summarize(n_rej_hypo = sum(padj < PADJ_CUTOFF, na.rm=TRUE)) %>%
         group_by(heavy_BD_min, heavy_BD_max) %>%
           summarize(max_n_rej_hypo = max(n_rej_hypo),
                     min_occur_all = min(occur_all),
@@ -317,7 +318,6 @@ write.table(deseq_res, opts[['--all']], sep='\t', quote=FALSE, row.names=FALSE)
 msg = paste0('# A file of all DESeq2 run results was written to: ', opts[['--all']])
 write(msg, stderr())
 
-
 # Finding number of hypotheses rejected; selecting occurances with most rejects
 ## occur cutoffs with max number of rejected hypos
 ## if multiple cutoffs with the same rejects, then selecting the first
@@ -327,7 +327,7 @@ deseq_res = deseq_res %>%
       group_by(heavy_BD_min, heavy_BD_max) %>%
         filter(n_rej_hypo == max(n_rej_hypo)) %>%
           ungroup() %>%
-            distinct(heavy_BD_min, heavy_BD_max, taxon)
+            distinct(heavy_BD_min, heavy_BD_max, taxon, .keep_all=TRUE)
 
 # writing table of max number of rejected hypos per BD window
 write_maxRej_summary(deseq_res, opts)
@@ -349,7 +349,7 @@ deseq_res = deseq_res %>%
   group_by(taxon) %>%
     filter(log2FoldChange == max(log2FoldChange, na.rm=TRUE)) %>%
       ungroup() %>%
-        distinct(taxon) %>%
+        distinct(taxon, .keep_all=TRUE) %>%
           select(-n_rej_hypo) %>%
             as.data.frame
 
