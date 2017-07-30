@@ -16,27 +16,46 @@ options:
                    [Default: heavy-cMtx]
   --BD=<b>         BD shift cutoff for identifying isotope incorporators.
                    [Default: 0.001]
-  --BD_low=<bl>    Low-end BD cutoff for determining the "heavy" fractions.
+  --BD_lowH=<hl>   Low-end BD cutoff for determining the "heavy" fractions.
                    [Default: 1.73]
-  --BD_high=<bl>   High-end BD cutoff for determining the "heavy" fractions.
-                   [Default: 1.75]
-  --libs=<l>       Libraries that are 13C treatments. (comma-separated list).
+  --BD_highH=<hh>  High-end BD cutoff for determining the "heavy" fractions.
+                   [Default: 1.75]		   
+  --BD_lowL=<ll>   Low-end BD cutoff for determining the "light" fractions.
+                   [Default: 1.68]
+  --BD_highL=<hl>  High-end BD cutoff for determining the "light" fractions.
+                   [Default: 1.70]		   
+  --con=<l>        Libraries that are unlabeled controls. (comma-separated list).
+                   [Default: 1]
+  --treat=<l>      Libraries that are labeled treatments. (comma-separated list).
                    [Default: 2]
+  --method         heavy-SIP method (see description). [Default: 1]
   -h               Help
 description: 
   Use caret to make a confusion matrix comparing
   KNOWN isotope incorporation (based on BD distribution
   shift between pre-incorp and post-incorp BD KDEs) and
-  PREDICTED isotope incorporation (all OTUs in "heavy"
-  fractions)
+  PREDICTED isotope incorporation (all OTUs in "heavy" fractions)
+  
+  "heavy-SIP" can define incorporators as either:
+
+  1) any taxa IN the "heavy" fractions of the labeled treatment gradients
+  2) any taxa IN the "heavy" fractions of the labeled treatment and NOT present in the "heavy" fractions of the control
+  3) any taxa IN the "heavy" fractions of the labeled treatment and NOT present in the "heavy" fractions of the control and NOT present in "light" fractions of the labeled treatment
+  
 ' -> doc
 
+# opt-parse
 opts = docopt(doc)
 BD_shift.cut = as.numeric(opts[['--BD']])
-BD_low.cut = as.numeric(opts[['--BD_low']])
-BD_high.cut = as.numeric(opts[['--BD_high']])
-libs = strsplit(opts[['--libs']], split=',')
-libs = unlist(libs)
+BD_lowH.cut = as.numeric(opts[['--BD_lowH']])
+BD_highH.cut = as.numeric(opts[['--BD_highH']])
+BD_lowL.cut = as.numeric(opts[['--BD_lowL']])
+BD_highL.cut = as.numeric(opts[['--BD_highL']])
+libs_treat = strsplit(opts[['--treat']], split=',')
+libs_treat = unlist(libs_treat)
+libs_con = strsplit(opts[['--treat']], split=',')
+libs_con = unlist(libs_con)
+hSIP_method = as.character(opts[['--method']])
 
 # packages
 pkgs <- c('dplyr', 'tidyr', 'caret')
@@ -44,8 +63,9 @@ for(x in pkgs){
   suppressPackageStartupMessages(library(x, character.only=TRUE))
 }
 
-# main
-## import
+
+#-- main --#
+## load OTU table
 if(opts[['<OTU_table>']] == '-'){
   con = pipe("cat", "rb")
   df_OTU = read.delim(con, sep='\t')
@@ -56,13 +76,73 @@ df_shift = read.delim(opts[['BD_shift']], sep='\t')
 
 
 ## calling incorporators
-### 'heavy' fractions in OTU table
-df_OTU = df_OTU %>%
-  filter(library %in% libs, BD_min >= BD_low.cut, BD_max <= BD_high.cut) %>%
+
+if(hSIP_method == '1'){
+  ### Method1: any OTU in 'heavy' fractions of treatment
+  df_OTU = df_OTU %>%
+  filter(library %in% libs_treat, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
     group_by(taxon) %>%
       summarize(total_abund = sum(count)) %>%
         ungroup() %>%
           mutate(incorp = ifelse(total_abund > 0, TRUE, FALSE))
+} else
+if(hSIP_method == '2'){
+  ### Method2: any OTU in 'heavy' fractions of treatment and not in 'heavy' fractions of control
+  #### OTU in 'heavy' treatment fractions
+  df_OTU = df_OTU %>%
+  filter(library %in% libs_treat, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
+    group_by(taxon) %>%
+      summarize(total_abund = sum(count)) %>%
+        ungroup() %>%
+          mutate(incorp = ifelse(total_abund > 0, TRUE, FALSE))
+
+  #### OTUs in 'heavy' control fractions
+  taxa_HC = df_OTU %>%
+  filter(library %in% libs_con, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
+    group_by(taxon) %>%
+      summarize(total_abund = sum(count)) %>%
+        ungroup() %>%
+          filter(total_abund > 0) %>%
+	    .$taxon
+  #### calling incorporators
+  df_OTU = df_OTU %>%
+    mutate(incorp = ifelse(incorp == TRUE & !(taxon %in% taxa_HC), TRUE, FALSE))
+} else
+if(hSIP_method == '3'){
+  ### Method3: any OTU in 'heavy' fractions of treatment,
+  #### ... not in 'heavy' fractions of control,
+  #### ... and not in 'light' fractions of treatment 
+  #### OTU in 'heavy' treatment fractions
+  df_OTU = df_OTU %>%
+  filter(library %in% libs_treat, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
+    group_by(taxon) %>%
+      summarize(total_abund = sum(count)) %>%
+        ungroup() %>%
+          mutate(incorp = ifelse(total_abund > 0, TRUE, FALSE))
+
+  #### OTUs in 'heavy' control fractions
+  taxa_HC = df_OTU %>%
+  filter(library %in% libs_con, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
+    group_by(taxon) %>%
+      summarize(total_abund = sum(count)) %>%
+        ungroup() %>%
+          filter(total_abund > 0) %>%
+	    .$taxon
+
+  #### OTUs in 'light' treatment fractions
+  taxa_LT = df_OTU %>%
+  filter(library %in% libs_con, BD_min >= BD_lowL.cut, BD_max <= BD_highL.cut) %>%
+    group_by(taxon) %>%
+      summarize(total_abund = sum(count)) %>%
+        ungroup() %>%
+          filter(total_abund > 0) %>%
+	    .$taxon
+
+  #### calling incorporators
+  df_OTU = df_OTU %>%
+    mutate(incorp = ifelse(incorp == TRUE & !(taxon %in% taxa_HC) & !(taxon %in% taxa_LT), TRUE, FALSE))
+}
+
 
 
 ### BD-shift table (reference)
@@ -76,9 +156,9 @@ if (ncol(df_shift) == 8){
         mutate(incorp = BD_shift > BD_shift.cut)
 }
 df_shift = df_shift %>%
-  filter(library %in% libs)
+  filter(library %in% libs_treat)
 
-# making factors of incorporation status
+## making factors of incorporation status
 order_incorp = function(x){
   x$incorp = factor(x$incorp, levels=c(TRUE, FALSE))
   return(x)

@@ -27,6 +27,20 @@ If you use SIPSim, please cite:
 
 [[top](#sections)]
 
+## Dependencies
+
+* docopt
+* dplyr
+* tidyr
+* ggplot2
+* phyloseq
+* DESeq2
+* fitdistrplus
+* vegan
+* caret
+* ape
+* optparse
+
 
 ## Clone the repo
 
