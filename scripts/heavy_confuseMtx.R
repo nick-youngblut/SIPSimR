@@ -28,7 +28,7 @@ options:
                    [Default: 1]
   --treat=<l>      Libraries that are labeled treatments. (comma-separated list).
                    [Default: 2]
-  --method         heavy-SIP method (see description). [Default: 1]
+  --method=<m>     heavy-SIP method (see description). [Default: 1]
   -h               Help
 description: 
   Use caret to make a confusion matrix comparing
@@ -53,7 +53,7 @@ BD_lowL.cut = as.numeric(opts[['--BD_lowL']])
 BD_highL.cut = as.numeric(opts[['--BD_highL']])
 libs_treat = strsplit(opts[['--treat']], split=',')
 libs_treat = unlist(libs_treat)
-libs_con = strsplit(opts[['--treat']], split=',')
+libs_con = strsplit(opts[['--con']], split=',')
 libs_con = unlist(libs_con)
 hSIP_method = as.character(opts[['--method']])
 
@@ -62,7 +62,6 @@ pkgs <- c('dplyr', 'tidyr', 'caret')
 for(x in pkgs){
   suppressPackageStartupMessages(library(x, character.only=TRUE))
 }
-
 
 #-- main --#
 ## load OTU table
@@ -76,26 +75,19 @@ df_shift = read.delim(opts[['BD_shift']], sep='\t')
 
 
 ## calling incorporators
-
-if(hSIP_method == '1'){
-  ### Method1: any OTU in 'heavy' fractions of treatment
-  df_OTU = df_OTU %>%
+### Method1: any OTU in 'heavy' fractions of treatment
+if(hSIP_method %in% c('1', '2', '3')){
+  df_OTU_s = df_OTU %>%
   filter(library %in% libs_treat, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
     group_by(taxon) %>%
       summarize(total_abund = sum(count)) %>%
         ungroup() %>%
           mutate(incorp = ifelse(total_abund > 0, TRUE, FALSE))
-} else
-if(hSIP_method == '2'){
-  ### Method2: any OTU in 'heavy' fractions of treatment and not in 'heavy' fractions of control
-  #### OTU in 'heavy' treatment fractions
-  df_OTU = df_OTU %>%
-  filter(library %in% libs_treat, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
-    group_by(taxon) %>%
-      summarize(total_abund = sum(count)) %>%
-        ungroup() %>%
-          mutate(incorp = ifelse(total_abund > 0, TRUE, FALSE))
-
+} else {
+  stop('heavy-SIP method not recognized')
+}
+### Method2: any OTU in 'heavy' fractions of treatment and not in 'heavy' fractions of control
+if(hSIP_method %in% c('2', '3')){
   #### OTUs in 'heavy' control fractions
   taxa_HC = df_OTU %>%
   filter(library %in% libs_con, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
@@ -105,30 +97,13 @@ if(hSIP_method == '2'){
           filter(total_abund > 0) %>%
 	    .$taxon
   #### calling incorporators
-  df_OTU = df_OTU %>%
+  df_OTU_s = df_OTU_s %>%
     mutate(incorp = ifelse(incorp == TRUE & !(taxon %in% taxa_HC), TRUE, FALSE))
-} else
+}
+### Method3: any OTU in 'heavy' fractions of treatment,
+#### ... not in 'heavy' fractions of control,
+#### ... and not in 'light' fractions of treatment 
 if(hSIP_method == '3'){
-  ### Method3: any OTU in 'heavy' fractions of treatment,
-  #### ... not in 'heavy' fractions of control,
-  #### ... and not in 'light' fractions of treatment 
-  #### OTU in 'heavy' treatment fractions
-  df_OTU = df_OTU %>%
-  filter(library %in% libs_treat, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
-    group_by(taxon) %>%
-      summarize(total_abund = sum(count)) %>%
-        ungroup() %>%
-          mutate(incorp = ifelse(total_abund > 0, TRUE, FALSE))
-
-  #### OTUs in 'heavy' control fractions
-  taxa_HC = df_OTU %>%
-  filter(library %in% libs_con, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
-    group_by(taxon) %>%
-      summarize(total_abund = sum(count)) %>%
-        ungroup() %>%
-          filter(total_abund > 0) %>%
-	    .$taxon
-
   #### OTUs in 'light' treatment fractions
   taxa_LT = df_OTU %>%
   filter(library %in% libs_con, BD_min >= BD_lowL.cut, BD_max <= BD_highL.cut) %>%
@@ -139,11 +114,12 @@ if(hSIP_method == '3'){
 	    .$taxon
 
   #### calling incorporators
-  df_OTU = df_OTU %>%
-    mutate(incorp = ifelse(incorp == TRUE & !(taxon %in% taxa_HC) & !(taxon %in% taxa_LT), TRUE, FALSE))
+  df_OTU_s = df_OTU_s %>%
+    mutate(incorp = ifelse(incorp == TRUE & !(taxon %in% taxa_LT), TRUE, FALSE))
 }
-
-
+#### re-set df_OTU
+df_OTU = df_OTU_s
+df_OTU_s = NULL
 
 ### BD-shift table (reference)
 if (ncol(df_shift) == 8){
