@@ -40,7 +40,8 @@ description:
 
   1) any taxa IN the "heavy" fractions of the labeled treatment gradients
   2) any taxa IN the "heavy" fractions of the labeled treatment and NOT present in the "heavy" fractions of the control
-  3) any taxa IN the "heavy" fractions of the labeled treatment and NOT present in the "heavy" fractions of the control and NOT present in "light" fractions of the labeled treatment
+  3) any taxa IN the "heavy" fractions of the labeled treatment and NOT present in the "light" fractions of the labeled treatment 
+  4) any taxa IN the "heavy" fractions of the labeled treatment and NOT present in the "heavy" fractions of the control and NOT present in "light" fractions of the labeled treatment
   
 ' -> doc
 
@@ -75,8 +76,8 @@ df_shift = read.delim(opts[['BD_shift']], sep='\t')
 
 
 ## calling incorporators
-### Method1: any OTU in 'heavy' fractions of treatment
-if(hSIP_method %in% c('1', '2', '3')){
+### taxa in 'heavy' fractions of treatment
+if(hSIP_method %in% c('1', '2', '3', '4')){
   df_OTU_s = df_OTU %>%
   filter(library %in% libs_treat, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
     group_by(taxon) %>%
@@ -86,8 +87,8 @@ if(hSIP_method %in% c('1', '2', '3')){
 } else {
   stop('heavy-SIP method not recognized')
 }
-### Method2: any OTU in 'heavy' fractions of treatment and not in 'heavy' fractions of control
-if(hSIP_method %in% c('2', '3')){
+### taxa not in 'heavy' fractions of control
+if(hSIP_method %in% c('2', '4')){
   #### OTUs in 'heavy' control fractions
   taxa_HC = df_OTU %>%
   filter(library %in% libs_con, BD_min >= BD_lowH.cut, BD_max <= BD_highH.cut) %>%
@@ -100,10 +101,8 @@ if(hSIP_method %in% c('2', '3')){
   df_OTU_s = df_OTU_s %>%
     mutate(incorp = ifelse(incorp == TRUE & !(taxon %in% taxa_HC), TRUE, FALSE))
 }
-### Method3: any OTU in 'heavy' fractions of treatment,
-#### ... not in 'heavy' fractions of control,
-#### ... and not in 'light' fractions of treatment 
-if(hSIP_method == '3'){
+### taxa not in 'light' fractions of treatment,
+if(hSIP_method %in% c('3','4')){
   #### OTUs in 'light' treatment fractions
   taxa_LT = df_OTU %>%
   filter(library %in% libs_con, BD_min >= BD_lowL.cut, BD_max <= BD_highL.cut) %>%
