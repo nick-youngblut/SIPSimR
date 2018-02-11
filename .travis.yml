@@ -16,7 +16,6 @@ before_install:
 
 install:
   - conda install --yes r-base
-  - conda install --yes r-docopt
   - conda install --yes r-getopt
   - conda install --yes r-optparse
   - conda install --yes r-vegan
@@ -28,6 +27,7 @@ install:
   - conda install --yes r-caret
   - conda install --yes bioconductor-phyloseq
   - conda install --yes bioconductor-DESeq2
+  - conda install --yes r-docopt
   - pip install .
 
 script:
