@@ -24,10 +24,10 @@ install:
   - conda install --yes r-dplyr
   - conda install --yes r-tidyr
   - conda install --yes r-ggplot2
-  - conda install --yes r-phyloseq
-  - conda install --yes r-DESeq2
   - conda install --yes r-fitdistrplus
   - conda install --yes r-caret
+  - conda install --yes bioconductor-phyloseq
+  - conda install --yes bioconductor-DESeq2
   - pip install .
 
 script:
