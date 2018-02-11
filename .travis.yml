@@ -15,7 +15,9 @@ before_install:
   - conda config --add channels bioconda
 
 install:
+  - conda install --yes r-base
   - conda install --yes r-docopt
+  - conda install --yes r-getopt
   - conda install --yes r-optparse
   - conda install --yes r-vegan
   - conda install --yes r-ape
