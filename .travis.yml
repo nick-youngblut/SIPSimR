@@ -7,19 +7,25 @@ before_install:
   - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh							 
   - ./miniconda.sh -b
-  - export PATH=$HOME/miniconda3/bin:$PATH
+  - export PATH=$HOME/miniconda2/bin:$PATH
   - conda update --yes conda
   - conda config --add channels r
   - conda config --add channels defaults
   - conda config --add channels conda-forge
   - conda config --add channels bioconda
 
-
 install:
   - conda install --yes r-docopt
+  - conda install --yes r-optparse
+  - conda install --yes r-vegan
+  - conda install --yes r-ape
   - conda install --yes r-dplyr
   - conda install --yes r-tidyr
   - conda install --yes r-ggplot2
+  - conda install --yes r-phyloseq
+  - conda install --yes r-DESeq2
+  - conda install --yes r-fitdistrplus
+  - conda install --yes r-caret
   - pip install .
 
 script:
