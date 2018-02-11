@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
 mod <- "5/19/14";
 version <- "0.1";
 author <- "Nick Youngblut";
