@@ -28,6 +28,7 @@ install:
   - conda install --yes bioconductor-phyloseq
   - conda install --yes bioconductor-DESeq2
   - conda install --yes r-docopt
+  - conda install --yes r-stringi
   - pip install .
 
 script:
