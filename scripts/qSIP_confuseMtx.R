@@ -58,6 +58,18 @@ df_qSIP = df_qSIP %>%
   mutate(incorp = ifelse(atom_CI_low > 0, TRUE, FALSE),
          incorp = ifelse(is.na(incorp), FALSE, incorp))
 
+# writing out table of incorporator-calls
+outFile = gsub('\\.(txt|Rdata|RDS)$', '', opts[['<qSIP_atomExcess>']])
+outFile = paste0(outFile, '_incorp.txt')
+if(outFile == opts[['<qSIP_atomExcess>']]){
+  message('#-- Error report --#')
+  message('Input file: ', opts[['<qSIP_atomExcess>']])
+  message('Incorp-call file: ', outFile) 
+  stop('Incorporator-called file is named the same as input file!')
+}
+write.table(df_qSIP, outFile, sep='\t', quote=FALSE, row.names=FALSE)
+message('File written: ', outFile)
+
 
 ### BD-shift table (reference)
 if (ncol(df_shift) == 8){

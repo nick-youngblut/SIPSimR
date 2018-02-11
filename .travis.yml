@@ -1,0 +1,48 @@
+language: python
+
+python:
+  - "2.7"
+
+before_install:
+  - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh							 
+  - ./miniconda.sh -b
+  - export PATH=$HOME/miniconda3/bin:$PATH
+  - conda update --yes conda
+  - conda config --add channels r
+  - conda config --add channels defaults
+  - conda config --add channels conda-forge
+  - conda config --add channels bioconda
+
+
+install:
+  - conda install --yes r-docopt
+  - conda install --yes r-dplyr
+  - conda install --yes r-tidyr
+  - conda install --yes r-ggplot2
+  - pip install .
+
+script:
+  # script docs
+  - BD_span_calc.R -h
+  - comm_add_richness.R -h
+  - comm_add_target.R -h
+  - comm_beta_div.R -h
+  - comm_set_abund.R -h
+  - comm_shuffle_taxa.R -h
+  - correlogram_make.R -h
+  - DESeq2_addInfo.R -h
+  - DESeq2_combine.R -h
+  - DESeq2_confuseMtx.R -h
+  - DESeq2_listTaxa.R -h
+  - DESeq2_rare-dominant.R -h
+  - heavy_confuseMtx.R -h
+  - OTU_taxonAbund.R -h
+  - phyloseq2comm.R -h
+  - phyloseq_DESeq2.R -h
+  - phyloseq_edit.R -h
+  - phyloseq_make.R -h
+  - phyloseq_ordination.R -h
+  - qSIP_confuseMtx.R -h
+  - rTraitContW.R -h
+  - shannon_calc.R -h

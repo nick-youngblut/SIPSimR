@@ -94,8 +94,21 @@ deseq.res = deseq.res %>%
   mutate(incorp = (padj < padj.cut) & (log2FoldChange >= log2.cut))
 
 
+# writing out table of incorporator-calls
+outFile = gsub('\\.(txt|Rdata|RDS)$', '', opts[['<DESeq2>']])
+outFile = paste0(outFile, '_incorp.txt')
+if(outFile == opts[['<DESeq2>']]){
+  message('#-- Error report --#')
+  message('Input file: ', opts[['<DESeq2>']])
+  message('Incorp-call file: ', outFile) 
+  stop('Incorporator-called file is named the same as input file!')
+}
+write.table(deseq.res, outFile, sep='\t', quote=FALSE, row.names=FALSE)
+message('File written: ', outFile)
 
-### BD-shift table (reference)
+
+
+### BD-shift table (reference of known shift)
 if (ncol(BD.shift) == 8){
   BD.shift = BD.shift %>%
     mutate(incorp = median > BD_shift.cut)
