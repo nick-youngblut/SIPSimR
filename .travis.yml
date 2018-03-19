@@ -55,5 +55,4 @@ script:
   - phyloseq_make.R -h
   - phyloseq_ordination.R -h
   - qSIP_confuseMtx.R -h
-  - rTraitContW.R -h
   - shannon_calc.R -h
